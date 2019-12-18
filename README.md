@@ -6,7 +6,7 @@ To run this code you will need to have R, Rstudio and [renv](https://rstudio.git
 Clone this repo:  
 `git clone https://github.com/GMoncrieff/peninsula_fire_recovery.git`
 Install the required packages using renv:  
-`renv::init()z 
+`renv::init()` 
 
 In addition you will need to have [jags](http://mcmc-jags.sourceforge.net/) installed to fit models using MCMC. Model fitting is computationall intensive, requiring +/- 24 hours on a machine with a minimum of 4 cores and 64GB RAM
 
