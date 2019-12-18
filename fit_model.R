@@ -1,10 +1,11 @@
-######
-##data prep and model fitting for Slingsby et al 2020
-######
+##################################################
+##data prep and model fitting for Slingsby, Moncrieff and Wilson 2020
+##################################################
 
 ####################
 ##setup
 ####################
+#you only need to run this once
 renv::init()
 
 ### Load libraries

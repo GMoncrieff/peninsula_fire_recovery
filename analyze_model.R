@@ -1,8 +1,8 @@
 #################################
 ######Analysis of results and creation of rasters for upload to GEE
 #################################
-
-renv::init()
+#only run if you have not before
+#renv::init()
 
 libs=c(
   "dplyr",

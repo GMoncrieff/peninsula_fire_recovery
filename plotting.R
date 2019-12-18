@@ -1,4 +1,10 @@
-renv::init()
+###########################################################
+###Script to generate plots for Slingsby, Moncriedff and Wilson 2020
+###########################################################
+
+
+#only run if you have not before
+#renv::init()
 
 libs=c("dplyr",
 "tidyr",
