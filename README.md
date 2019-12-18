@@ -14,6 +14,7 @@ To run the EarthEngine code you will need to have an Earth Engine account. You c
 
 Please direct all criticism/issues to:  
 Jasper Slingsby <jasper@saeon.ac.za>  
+  
 Please direct all compliments/praise to:  
 Glenn Moncrieff <glenn@saeon.ac.za>  
 
