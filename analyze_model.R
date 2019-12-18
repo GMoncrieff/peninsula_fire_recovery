@@ -17,6 +17,11 @@ renv::init()
 #file locations and names
 mdatwd <- "data/"
 mname <- "peninsulaDec2019" #model name for file naming
+
+#download the results if you need:
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/exceed_above.tif', destfile = paste0(mdatwd, mname, "_modeloutput.Rdata"))
+
+#load results
 foutput <- paste0(mdatwd, mname, "_modeloutput.Rdata")
 envdata <- paste0(mdatwd,mname,"_envdata.Rdata")
 
