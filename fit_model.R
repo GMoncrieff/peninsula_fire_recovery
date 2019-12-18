@@ -5,29 +5,27 @@
 ####################
 ##setup
 ####################
-
-# ### Load libraries
-# libs=c(
-#   "doParallel",
-#   "rasterVis",
-#   "rgdal",
-#   "reshape2",
-#   "sp",
-#   "knitr",
-#   "rmarkdown",
-#   "ggplot2",
-#   "tidyr",
-#   "dplyr",
-#   "minpack.lm",
-#   "maptools",
-#   "lubridate",
-#   "rjags",
-#   "dclone",
-#   "raster")
-# lapply(libs, require, character.only=T)
-
-#or
 renv::init()
+
+### Load libraries
+libs=c(
+  "doParallel",
+  "rasterVis",
+  "rgdal",
+  "reshape2",
+  "sp",
+  "knitr",
+  "rmarkdown",
+  "ggplot2",
+  "tidyr",
+  "dplyr",
+  "minpack.lm",
+  "maptools",
+  "lubridate",
+  "rjags",
+  "dclone",
+  "raster")
+lapply(libs, require, character.only=T)
 
 #file locations and names
 mdatwd <- "data/"
@@ -207,6 +205,8 @@ tdat <- tdat[order(tdat$jag_id),]
 #final check
 if(length(unique(tdat$jag_id)) != nrow(env))  print("sites not matching between spatial and temporal data!")
 
+#for alter analysis
+save(tdat,file=paste(mdatwd,mname,"_inputdata_small.Rdata",sep="")) #save env for analysing results
 ###########################################################
 ###Prep JAGS inputs
 ###########################################################

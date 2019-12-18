@@ -4,7 +4,7 @@
 To run this code you will need to have R, Rstudio and [renv](https://rstudio.github.io/renv/) installed 
   
 Clone this repo:  
-`git clone https://github.com/GMoncrieff/peninsula_fire_recovery.git`
+`git clone https://github.com/GMoncrieff/peninsula_fire_recovery.git`  
 Install the required packages using renv:  
 `renv::init()` 
 
