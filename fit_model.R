@@ -1,3 +1,4 @@
+
 ##################################################
 ##data prep and model fitting for Slingsby, Moncrieff and Wilson 2020
 ##################################################
@@ -102,7 +103,7 @@ cdat$UIJ <- paste(round(cdat$x, 3), round(cdat$y, 3), sep = "_") #add unique ide
 
 
 #drop NDVI values < 0 or bad quality (QA !=0) and pixels (UI) with =<300 data points
-cdat <- cdat %>% filter(NDVI > 0) %>% group_by(UIJ) %>% filter(QA == 0) %>% filter(n() >= 300)
+cdat <- cdat %>% filter(NDVI > 0) %>% filter(QA <2) %>% group_by(UIJ)  %>% filter(n() >= 100)
 
 #trim covariates and temporal data to match
 cov$UIJ <- paste(round(cov$x, 3), round(cov$y, 3), sep = "_") #replace unique identifier rounded to coords with 3 decimal places (that matches temporal data)
@@ -146,8 +147,17 @@ cdat$DA <- cdat$Age/365.25
 ###########################################################
 
 #create dummy vars for veg type
-cov$vegnut <- recode_factor(cov$vegtype, "Granite Fynbos" = "High", "Sand Fynbos" = "High", "Sandstone Fynbos" = "Low", "Shale Fynbos" = "High", "Shale Renosterveld" = "High", "Western Strandveld"  = "High")
-cov$vegnut <- as.factor(cov$vegnut)
+veg<-c("Peninsula Shale Renosterveld","Peninsula Granite Fynbos - North","Peninsula Shale Fynbos",                
+       "Peninsula Sandstone Fynbos","Peninsula Granite Fynbos - South","Hangklip Sand Fynbos",
+       "Cape Flats Dune Strandveld - False Bay","Cape Flats Sand Fynbos")
+geo <-c("shale","granite","shale","sandstone","granite","sand","strand","sand")
+recode <- data.frame(vegtype=veg,geo=geo)
+
+cov <- cov %>%
+  filter(vegtype %in% veg) %>%
+  left_join(recode,by="vegtype")
+
+cov$vegnut <- as.factor(cov$geo)
 tveg <- as.numeric(cov$vegnut) - 1
 dummies <- model.matrix(~as.factor(tveg))
 dummies <- dummies[,-1]
@@ -195,8 +205,17 @@ env$jag_id <- as.integer(as.factor(env$UIJ))
 jtab <- data.frame(UIJ=env$UIJ,jag_id=env$jag_id, stringsAsFactors=F)
 tdat <- left_join(tdat, jtab, by='UIJ')
 
+#make sure tdat and env have matching sites
+env_sites <- unique(env$jag_id)
+tdat_sites <- unique(tdat$jag_id)
+
+tdat <- tdat %>%
+  filter(jag_id %in% env_sites)
+env <- env %>%
+  filter(jag_id %in% tdat_sites)
+
 #arrange temporal and env data into same order
-drop.cols <- c('jag_id', 'UI','UIJ')
+drop.cols <- c('jag_id', 'UI','UIJ','tveg')
 env <- env[order(env$jag_id),] 
 save(env,file=paste(mdatwd,mname,"_envdata.Rdata",sep="")) #save env for analysing results
 env <- env %>% dplyr::select(-one_of(drop.cols))
@@ -254,11 +273,12 @@ gen.inits=function(nGrid,nBeta) { list(
 params=c("phi","gamma.beta","gamma.sigma","A.beta","A.sigma","alpha","gamma","lambda","A",
          "alpha.mu","alpha.sigma","lambda.beta","lambda.sigma","sigma")
 
+#params=c("gamma.beta")
 ###########################################################
 ###Save all data into Rdata object for model fitting
 ###########################################################
 
-save.image(file=paste(mdatwd,mname,"_inputdata.Rdata",sep="")) 
+#save.image(file=paste(mdatwd,mname,"_inputdata.Rdata",sep="")) 
 
 rm(list = ls()[-which(ls() %in% c("mdat", "mname", "data", "params", "cl", "mdatwd", "gen.inits"))])
 gc()
@@ -273,13 +293,21 @@ foutput=paste0(mdatwd, mname, "_modeloutput.Rdata")
 m <- jags.parfit(cl = cl, #runs chains in parallel with library(dclone)
                  data = data, 
                  params = params, 
-                 model = paste0(mdatwd,"Model.R"), 
+                 model = "Model_nc.R", 
                  inits = gen.inits(data$nGrid,data$nBeta), 
                  n.chains = 3,
-                 n.adapt=1000,n.update=1000,
-                 thin = 2, n.iter = 2000
+                 n.adapt=10000,n.update=10000,
+                 thin = 5, n.iter = 10000
 )
+
+# m <- jags.fit(data = data, 
+#                  params = params, 
+#                  model = "Model_nc.R", 
+#                  inits = gen.inits(data$nGrid,data$nBeta), 
+#                  n.chains = 1,
+#                  n.adapt=100,n.update=100,
+#                  thin = 1, n.iter = 200
+# )
 
 
 save(m,file=foutput)
-

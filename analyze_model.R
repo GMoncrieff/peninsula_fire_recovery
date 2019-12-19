@@ -18,8 +18,10 @@ lapply(libs, require, character.only=T)
 mdatwd <- "data/"
 mname <- "peninsulaDec2019" #model name for file naming
 
-#download the results if you need:
-download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/exceed_above.tif', destfile = paste0(mdatwd, mname, "_modeloutput.Rdata"))
+#download the results if you did not create them in fit_model.R:
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_modeloutput.Rdata', destfile = paste0(mdatwd, mname, "_modeloutput.Rdata"))
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_envdata.Rdata', destfile = paste0(mdatwd, mname, "_envdata.Rdata"))
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_inputdata_small.Rdata', destfile = paste0(mdatwd, mname, "_inputdata_small.Rdata"))
 
 #load results
 foutput <- paste0(mdatwd, mname, "_modeloutput.Rdata")
