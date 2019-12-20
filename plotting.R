@@ -52,6 +52,7 @@ g <- ggplot() +
   facet_wrap(~variable) +
   theme_void() +
   labs(fill="Deviance") + 
+  theme(legend.position=c(.1,.25)) + 
   annotate("rect", xmin = 2045607, xmax = 2054169, ymin = -4045661, ymax = -4040601, fill = "transparent", colour = "grey30") + 
   annotate("text", label = "Silvermine", x = 2050000, y = -4047000, colour = "grey30") +
   annotate("rect", xmin = 2037356, xmax = 2042970, ymin = -4037517, ymax = -4031284, fill = "transparent", colour = "grey30") + 
