@@ -1,13 +1,29 @@
-library(tidyverse)
-library(reshape2)
-library(raster)
-library(coda)
-library(rjags)
-library(tictoc)
-library(readxl)
-library(scales)
-library(sf)
-library(cowplot)
+###########################################################
+###Script to generate plots for Slingsby, Moncriedff and Wilson 2020
+###########################################################
+
+
+#only run if you have not before
+#renv::init()
+
+libs=c("dplyr",
+"tidyr",
+"ggplot2",
+"reshape2",
+"raster",
+"coda",
+"rjags",
+"tictoc",
+"readxl",
+"scales",
+"sf",
+"cowplot",
+"stringr")
+lapply(libs, require, character.only=T)
+
+#file locations and names
+mdatwd <- "data/"
+mname <- "peninsulaDec2019" #model name for file naming
 
 ###########################################################
 ###Get exceedance rasters (GEE output) and plot
@@ -16,7 +32,7 @@ library(cowplot)
 ###########################################################
 
 # Get data and wrangle for plotting
-exceed <- stack("Data/exceed_below.tif", "Data/exceed_above.tif")
+exceed <- stack("data/exceed_below.tif", "data/exceed_above.tif")
 names(exceed) <- c("below", "above")
 exceed <- projectRaster(exceed, crs = CRS("+proj=merc +lon_0=0 +lat_ts=0 +x_0=0 +y_0=0 +a=6378137 +b=6378137 +units=m +no_defs"))
 edat <- as.data.frame(rasterToPoints(exceed, spatial = F))
@@ -45,16 +61,27 @@ g <- ggplot() +
   annotate("rect", xmin = 2053500, xmax = 2056500, ymin = -4061000, ymax = -4058500, fill = "transparent", colour = "grey30") + 
   annotate("text", label = "Miller's Point", x = 2055500, y = -4062500, colour = "grey30")
 
-ggsave(filename = "exceedmap.png", plot = g, device = NULL, path = NULL, scale = 1, width = 18, height = 18, units = "cm", dpi = 300, limitsize = TRUE)
+ggsave(filename = "figures/exceedmap.png", plot = g, device = NULL, path = NULL, scale = 1, width = 18, height = 18, units = "cm", dpi = 300, limitsize = TRUE)
 
 ###########################################################
 ###Get model data and prep for model prediction and plotting
 ###########################################################
 
-# Get model data
-load("/home/jasper/Documents/Datasets/EMMA_output_data_Dec2019/peninsulaDec2019_inputdata_small.Rdata")
-load("/home/jasper/Documents/Datasets/EMMA_output_data_Dec2019/peninsulaDec2019_envdata.Rdata")
-load("/home/jasper/Documents/Datasets/EMMA_output_data_Dec2019/peninsulaDec2019_modeloutput4.Rdata")
+#download the results if you did not create them in fit_model.R:
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_modeloutput.Rdata', destfile = paste0(mdatwd, mname, "_modeloutput.Rdata"))
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_envdata.Rdata', destfile = paste0(mdatwd, mname, "_envdata.Rdata"))
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_inputdata_small.Rdata', destfile = paste0(mdatwd, mname, "_inputdata_small.Rdata"))
+
+#load results
+foutput <- paste0(mdatwd, mname, "_modeloutput.Rdata")
+envdata <- paste0(mdatwd,mname,"_envdata.Rdata")
+inputdata <- paste0(mdatwd,mname,"_inputdata_small.Rdata")
+
+#load model results
+#load env data
+load(foutput)
+load(envdata)
+load(inputdata)
 
 #add columns for results
 tdat$mean <- NA
@@ -119,7 +146,7 @@ As <- res %>%
 
 #to get a raster of ids:
 env = env %>%
-  separate(UI,c("lon","lat"),sep="_")
+  separate(UIJ,c("lon","lat"),sep="_")
 jag_id <- data.frame(lon = env$lon, lat = env$lat, gammas$parnum)
 jag_id_ras<-rasterFromXYZ(jag_id,res=c(0.002607436,0.002607436),crs='+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',digits=0.3)
 
@@ -223,7 +250,7 @@ parmeans <- ggdraw() +
   draw_plot(A + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = .5, y = 0, width = .25, height = 1) +
   draw_plot(a + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = .75, y = 0, width = .25, height = 1)
 
-ggsave(filename = "parametermap_means.png", plot = parmeans, device = NULL, path = NULL, scale = 1, width = 26, height = 14, units = "cm", dpi = 300, limitsize = TRUE)
+ggsave(filename = "figures/parametermap_means.png", plot = parmeans, device = NULL, path = NULL, scale = 1, width = 26, height = 14, units = "cm", dpi = 300, limitsize = TRUE)
 
 pars <- ggdraw() +
   draw_plot(A + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = 0, y = .4, width = .33, height = .6) +
@@ -271,7 +298,7 @@ parsd <- ggdraw() +
   draw_plot(A + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = .5, y = 0, width = .25, height = 1) +
   draw_plot(a + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = .75, y = 0, width = .25, height = 1)
 
-ggsave(filename = "parametermap_SD.png", plot = parsd, device = NULL, path = NULL, scale = 1, width = 26, height = 14, units = "cm", dpi = 300, limitsize = TRUE)
+ggsave(filename = "figures/parametermap_SD.png", plot = parsd, device = NULL, path = NULL, scale = 1, width = 26, height = 14, units = "cm", dpi = 300, limitsize = TRUE)
 
 
 ###########################################################
@@ -395,7 +422,7 @@ Pcp <- ggplot(data=new_dat, aes(x=Date,y=NDVI)) +
   annotate("text", label = "Fit", x = as.Date("2013-03-15"), y = 0.1) +
   annotate("text", label = "Forecast", x = as.Date("2015-06-01"), y = 0.1)
 
-ggsave(filename = "postfire_curves_points_of_interest.png", plot = Pcp, device = NULL, path = NULL, scale = 1, width = 18, height = 12, units = "cm", dpi = 300, limitsize = TRUE)
+ggsave(filename = "figures/postfire_curves_points_of_interest.png", plot = Pcp, device = NULL, path = NULL, scale = 1, width = 18, height = 12, units = "cm", dpi = 300, limitsize = TRUE)
 
     
     

@@ -1,25 +1,27 @@
 #################################
-######Analysis of results
+######Analysis of results and creation of rasters for upload to GEE
 #################################
+#only run if you have not before
+#renv::init()
 
-# libs=c(
-#   "dplyr",
-#   "tidyr",
-#   "raster",
-#   "coda",
-#   "rjags")
-# lapply(libs, require, character.only=T)
+libs=c(
+  "dplyr",
+  "tidyr",
+  "raster",
+  "coda",
+  "rjags")
+lapply(libs, require, character.only=T)
 
-#or
 
-renv::init()
 
 #file locations and names
 mdatwd <- "data/"
 mname <- "peninsulaDec2019" #model name for file naming
 
-#download the results if you need:
-download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/exceed_above.tif', destfile = paste0(mdatwd, mname, "_modeloutput.Rdata"))
+#download the results if you did not create them in fit_model.R:
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_modeloutput.Rdata', destfile = paste0(mdatwd, mname, "_modeloutput.Rdata"))
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_envdata.Rdata', destfile = paste0(mdatwd, mname, "_envdata.Rdata"))
+download.file('https://storage.googleapis.com/data-sharing-gmoncrieff/peninsulaDec2019_inputdata_small.Rdata', destfile = paste0(mdatwd, mname, "_inputdata_small.Rdata"))
 
 #load results
 foutput <- paste0(mdatwd, mname, "_modeloutput.Rdata")
@@ -113,11 +115,11 @@ AMras<-rasterFromXYZ(AM,res=c(0.002607436,0.002607436),crs='+proj=longlat +ellps
 ASDras<-rasterFromXYZ(ASD,res=c(0.002607436,0.002607436),crs='+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',digits=0.3)
 
 #write to disk
-writeRaster(gammaMras,paste0(mdatwd, "/rasters/gammaM.tif"))
-writeRaster(gammaSDras,paste0(mdatwd, "/rasters/gammaSD.tif"))
-writeRaster(lambdaMras,paste0(mdatwd, "/rasters/lambdaM.tif"))
-writeRaster(lambdaSDras,paste0(mdatwd, "/rasters/lambdaSD.tif"))
-writeRaster(alphaMras,paste0(mdatwd, "/rasters/alphaM.tif"))
-writeRaster(alphaSDras,paste0(mdatwd, "/rasters/alphaSD.tif"))
-writeRaster(AMras,paste0(mdatwd, "/rasters/AM.tif"))
-writeRaster(ASDras,paste0(mdatwd, "/rasters/ASD.tif"))
+writeRaster(gammaMras,paste0(mdatwd, "/EarthEngine/gammaM.tif"))
+writeRaster(gammaSDras,paste0(mdatwd, "/EarthEngine/gammaSD.tif"))
+writeRaster(lambdaMras,paste0(mdatwd, "/EarthEngine/lambdaM.tif"))
+writeRaster(lambdaSDras,paste0(mdatwd, "/EarthEngine/lambdaSD.tif"))
+writeRaster(alphaMras,paste0(mdatwd, "/EarthEngine/alphaM.tif"))
+writeRaster(alphaSDras,paste0(mdatwd, "/EarthEngine/alphaSD.tif"))
+writeRaster(AMras,paste0(mdatwd, "/EarthEngine/AM.tif"))
+writeRaster(ASDras,paste0(mdatwd, "/EarthEngine/ASD.tif"))
