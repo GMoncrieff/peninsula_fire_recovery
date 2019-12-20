@@ -124,8 +124,54 @@ jag_id <- data.frame(lon = env$lon, lat = env$lat, gammas$parnum)
 jag_id_ras<-rasterFromXYZ(jag_id,res=c(0.002607436,0.002607436),crs='+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',digits=0.3)
 
 ###########################################################
-###Plot maps of parameters
+###Plot maps of parameters and boxplot of regressino coefficients
 ###########################################################
+
+###########################################################
+###Plot maps of parameters and regression coefficients
+###########################################################
+
+# Parameter coefficients
+
+gcols <- grep("gamma.beta", colnames(m[[1]]))
+gamma.coef <- data.frame(variable = rep(sort(rep(colnames(m[[1]])[gcols],1000)),3),
+                         value = as.vector(sapply(m, FUN = function(x){x[,gcols]})),
+                         stringsAsFactors = F)
+
+lcols <- grep("lambda.beta", colnames(m[[1]]))
+lambda.coef <- data.frame(variable = rep(sort(rep(colnames(m[[1]])[lcols],1000)),3),
+                          value = as.vector(sapply(m, FUN = function(x){x[,lcols]})),
+                          stringsAsFactors = F)
+
+Acols <- grep("A.beta", colnames(m[[1]]))
+A.coef <- data.frame(variable = rep(sort(rep(colnames(m[[1]])[Acols],1000)),3),
+                     value = as.vector(sapply(m, FUN = function(x){x[,Acols]})),
+                     stringsAsFactors = F)
+
+betas <- bind_rows(lambda.coef, gamma.coef, A.coef)
+betas$covariate <- str_sub(betas$variable, -7, -1)
+betas$variable <- str_sub(betas$variable, 1, -9)
+betas <- filter(betas, !covariate == "beta[1]")
+betas$covariate <- recode(betas$covariate, 
+                          'beta[2]' = "slope", 
+                          'beta[3]' = "aspect",
+                          'beta[4]' = "TPI",
+                          'beta[5]' = "precip_Jan",
+                          'beta[6]' = "precip_July",
+                          'beta[7]' = "tmax_Jan",
+                          'beta[8]' = "tmin_July",
+                          'beta[9]' = "soiltype")
+
+b <- ggplot(betas) +
+  geom_boxplot(aes(x = covariate, y = value)) +
+  facet_wrap(.~variable, scales = "free_x") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) +
+  geom_hline(aes(yintercept = 0), colour = "gray50") +
+  coord_flip()
+
+# Maps
 
 dat <- bind_rows(lambdas, gammas, alphas, As)
 dat <- left_join(dat, jag_id, by = c("parnum" = "gammas.parnum"))
@@ -178,6 +224,16 @@ parmeans <- ggdraw() +
   draw_plot(a + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = .75, y = 0, width = .25, height = 1)
 
 ggsave(filename = "parametermap_means.png", plot = parmeans, device = NULL, path = NULL, scale = 1, width = 26, height = 14, units = "cm", dpi = 300, limitsize = TRUE)
+
+pars <- ggdraw() +
+  draw_plot(A + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = 0, y = .4, width = .33, height = .6) +
+  draw_plot(g + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = .33, y = .4, width = .33, height = .6) +
+  draw_plot(l + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = .66, y = .4, width = .33, height = .6) +
+  draw_plot(b + theme(legend.position=c(.25,.25), legend.key.size=unit(.5, "cm")), x = 0, y = 0, width = .9, height = .4) +
+  draw_plot_label(label = c("(a)", "(b)"), size = 15, x = c(0.025, 0.025), y = c(.965, .4), fontface = "bold")
+
+ggsave(filename = "parametermap.png", plot = pars, device = NULL, path = NULL, scale = 1, width = 16, height = 20, units = "cm", dpi = 300, limitsize = TRUE)
+
 
 # Standard Deviations
 
