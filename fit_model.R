@@ -1,4 +1,3 @@
-
 ##################################################
 ##data prep and model fitting for Slingsby, Moncrieff and Wilson 2020
 ##################################################
@@ -102,8 +101,11 @@ cdat$UIJ <- paste(round(cdat$x, 3), round(cdat$y, 3), sep = "_") #add unique ide
 ###########################################################
 
 
-#drop NDVI values < 0 or bad quality (QA !=0) and pixels (UI) with =<300 data points
-cdat <- cdat %>% filter(NDVI > 0) %>% filter(QA <2) %>% group_by(UIJ)  %>% filter(n() >= 100)
+#drop NDVI values < 0 or bad quality (QA !=0)
+cdat <- cdat %>% filter(NDVI > 0) %>% filter(QA <2)
+#pixels (UI) with =<100 data poi"nts in training data
+pix <-  cdat %>% filter(Date <= "2014-05-31") %>% group_by(UIJ)  %>% filter(n() >= 100) %>% select(UIJ)
+cdat <- cdat %>% filter(UIJ %in% unique(pix$UIJ))
 
 #trim covariates and temporal data to match
 cov$UIJ <- paste(round(cov$x, 3), round(cov$y, 3), sep = "_") #replace unique identifier rounded to coords with 3 decimal places (that matches temporal data)
@@ -148,8 +150,8 @@ cdat$DA <- cdat$Age/365.25
 
 #create dummy vars for veg type
 veg<-c("Peninsula Shale Renosterveld","Peninsula Granite Fynbos - North","Peninsula Shale Fynbos",                
-       "Peninsula Sandstone Fynbos","Peninsula Granite Fynbos - South","Hangklip Sand Fynbos",
-       "Cape Flats Dune Strandveld - False Bay","Cape Flats Sand Fynbos")
+"Peninsula Sandstone Fynbos","Peninsula Granite Fynbos - South","Hangklip Sand Fynbos",
+"Cape Flats Dune Strandveld - False Bay","Cape Flats Sand Fynbos")
 geo <-c("shale","granite","shale","sandstone","granite","sand","strand","sand")
 recode <- data.frame(vegtype=veg,geo=geo)
 
@@ -197,9 +199,6 @@ tdat$NDIN <- tdat$NDVI
 #if we want to predict NDVI for date beyond 2014-05-31
 #tdat$NDIN[(tdat$Date>as.Date("2014-05-31"))]=NA; gc() 
 
-#other wise only send data up to 2014-05-31 to jags
-tdat <- tdat[(tdat$Date<=as.Date("2014-05-31")),]; gc() 
-
 #create new id that goes from 1 to nGrid (to order env and tdat in the same way)
 env$jag_id <- as.integer(as.factor(env$UIJ))
 jtab <- data.frame(UIJ=env$UIJ,jag_id=env$jag_id, stringsAsFactors=F)
@@ -225,8 +224,13 @@ tdat <- tdat[order(tdat$jag_id),]
 #final check
 if(length(unique(tdat$jag_id)) != nrow(env))  print("sites not matching between spatial and temporal data!")
 
+#save tdat with all dates
+tdat_full <- tdat
+#other wise only send data up to 2014-05-31 to jags
+tdat <- tdat[(tdat$Date<=as.Date("2014-05-31")),]; gc() 
+
 #for alter analysis
-save(tdat,file=paste(mdatwd,mname,"_inputdata_small.Rdata",sep="")) #save env for analysing results
+save(tdat,tdat_full, file=paste(mdatwd,mname,"_inputdata_small.Rdata",sep="")) #save env for analysing results
 ###########################################################
 ###Prep JAGS inputs
 ###########################################################
@@ -311,3 +315,4 @@ m <- jags.parfit(cl = cl, #runs chains in parallel with library(dclone)
 
 
 save(m,file=foutput)
+
