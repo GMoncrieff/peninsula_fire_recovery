@@ -1,5 +1,5 @@
 ###########################################################
-###Script to generate plots for Slingsby, Moncriedff and Wilson 2020
+###Script to generate plots for Slingsby, Moncrieff and Wilson 2020
 ###########################################################
 
 
@@ -7,18 +7,18 @@
 #renv::init()
 
 libs=c("dplyr",
-"tidyr",
-"ggplot2",
-"reshape2",
-"raster",
-"coda",
-"rjags",
-"tictoc",
-"readxl",
-"scales",
-"sf",
-"cowplot",
-"stringr")
+       "tidyr",
+       "ggplot2",
+       "reshape2",
+       "raster",
+       "coda",
+       "rjags",
+       "tictoc",
+       "readxl",
+       "scales",
+       "sf",
+       "cowplot",
+       "stringr")
 lapply(libs, require, character.only=T)
 
 #file locations and names
@@ -85,6 +85,7 @@ load(envdata)
 load(inputdata)
 
 #add columns for results
+tdat <- tdat_full
 tdat$mean <- NA
 tdat$upper <- NA
 tdat$lower <- NA
@@ -148,7 +149,7 @@ As <- res %>%
 #to get a raster of ids:
 env = env %>%
   separate(UIJ,c("lon","lat"),sep="_")
-jag_id <- data.frame(lon = env$lon, lat = env$lat, gammas$parnum)
+jag_id <- data.frame(lon = env$lon, lat = env$lat, env$jag_id)
 jag_id_ras<-rasterFromXYZ(jag_id,res=c(0.002607436,0.002607436),crs='+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs',digits=0.3)
 
 ###########################################################
@@ -309,16 +310,17 @@ ggsave(filename = "figures/parametermap_SD.png", plot = parsd, device = NULL, pa
 # Get points of interest and extract "id" by intersecting with "jag_id_ras" raster
 pts <- data.frame(
   Site = c("Miller's Point: Alien clearing", "Cape of Good Hope: Drought", 
-  "Silvermine: Development", "Silvermine: Drought",
-  "Silvermine: Aliens", "Karbonkelberg: Fire"),
+           "Silvermine: Development", "Silvermine: Drought",
+           "Silvermine: Aliens", "Karbonkelberg: Fire"),
   Latitude = c(-34.225279, -34.316068, -34.113911,
                -34.115129, -34.03837, -34.039321),
   Longitude = c(18.463551, 18.428294, 18.39334,
                 18.397745, 18.37375, 18.334125)
-  )
-  
+)
+
+
 coordinates(pts) <- ~ Longitude + Latitude
-ids <- extract(jag_id_ras, pts)
+ids <- raster::extract(jag_id_ras, pts)
 
 ###NOTE: if you dont want to do this for all pixels it will take a long time!!!###
 
@@ -330,8 +332,10 @@ env <- env %>% filter(jag_id %in% ids)
 nsamp <- 1000
 
 #sample global parameters
-phi_par <- rnorm(nsamp, phi$Mean,phi$SD)
-sigma_par <- rnorm(nsamp, sig$Mean,sig$SD)
+phi_par <- sample(unlist(m[,"phi"]),nsamp)
+#phi_par <- rnorm(nsamp, phi$Mean,phi$SD)
+sigma_par <- sample(unlist(m[,"sigma"]),nsamp)
+#sigma_par <- rnorm(nsamp, sig$Mean,sig$SD)
 
 #make an empty df to which we can write results
 new_dat = tdat[FALSE,]
@@ -349,23 +353,35 @@ for (j in 1:nrow(env)){
   tdat_temp <- tdat %>% filter(jag_id == pid)
   
   #get pixel pars
-  alpha_m <- alphas$Mean[which(alphas$parnum==pid)]
-  alpha_sd <- alphas$SD[which(alphas$parnum==pid)]
+  alpha_temp <- unlist(m[,paste0("alpha[",pid,"]")])
+  alpha <- sample(alpha_temp,nsamp)
   
-  lambda_m <- lambdas$Mean[which(lambdas$parnum==pid)]
-  lambda_sd <- lambdas$SD[which(lambdas$parnum==pid)]
+  lambda_temp <- unlist(m[,paste0("lambda[",pid,"]")])
+  lambda <- sample(lambda_temp,nsamp)
   
-  A_m <- As$Mean[which(As$parnum==pid)]
-  A_sd <- As$SD[which(As$parnum==pid)]
+  A_temp <- unlist(m[,paste0("A[",pid,"]")])
+  A <- sample(A_temp,nsamp)
   
-  gamma_m <- gammas$Mean[which(gammas$parnum==pid)]
-  gamma_sd <- gammas$SD[which(gammas$parnum==pid)]
+  gamma_temp <- unlist(m[,paste0("gamma[",pid,"]")])
+  gamma <- sample(gamma_temp,nsamp)
   
-  #sample
-  alpha <- rnorm(nsamp, alpha_m,alpha_sd)
-  lambda <- rnorm(nsamp, lambda_m,lambda_sd)
-  gamma <- rnorm(nsamp, gamma_m,gamma_sd)
-  A <- rnorm(nsamp, A_m,A_sd)
+  # alpha_m <- alphas$Mean[which(alphas$parnum==pid)]
+  # alpha_sd <- alphas$SD[which(alphas$parnum==pid)]
+  # 
+  # lambda_m <- lambdas$Mean[which(lambdas$parnum==pid)]
+  # lambda_sd <- lambdas$SD[which(lambdas$parnum==pid)]
+  # 
+  # A_m <- As$Mean[which(As$parnum==pid)]
+  # A_sd <- As$SD[which(As$parnum==pid)]
+  # 
+  # gamma_m <- gammas$Mean[which(gammas$parnum==pid)]
+  # gamma_sd <- gammas$SD[which(gammas$parnum==pid)]
+  # 
+  # #sample
+  # alpha <- pmax(0,rnorm(nsamp, alpha_m,alpha_sd))
+  # lambda <- pmax(0,rnorm(nsamp, lambda_m,lambda_sd))
+  # gamma <- pmax(0,rnorm(nsamp, gamma_m,gamma_sd))
+  # A <- pmax(0,rnorm(nsamp, A_m,A_sd))
   
   for (i in 1:nrow(tdat_temp)){
     #sample loop
@@ -392,12 +408,12 @@ for (j in 1:nrow(env)){
     tdat_temp$lq[i] <- lq
   }
   
-#output the final results data frame
-new_dat <- bind_rows(new_dat,tdat_temp)
+  #output the final results data frame
+  new_dat <- bind_rows(new_dat,tdat_temp)
 }
 
 toc()
-  
+
 ### Plot
 
 #Fix names
@@ -424,12 +440,3 @@ Pcp <- ggplot(data=new_dat, aes(x=Date,y=NDVI)) +
   annotate("text", label = "Forecast", x = as.Date("2015-06-01"), y = 0.1)
 
 ggsave(filename = "figures/postfire_curves_points_of_interest.png", plot = Pcp, device = NULL, path = NULL, scale = 1, width = 18, height = 12, units = "cm", dpi = 300, limitsize = TRUE)
-
-    
-    
-    
-    
-    
-
-
-
