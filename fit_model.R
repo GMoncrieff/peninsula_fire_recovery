@@ -103,8 +103,8 @@ cdat$UIJ <- paste(round(cdat$x, 3), round(cdat$y, 3), sep = "_") #add unique ide
 
 #drop NDVI values < 0 or bad quality (QA !=0)
 cdat <- cdat %>% filter(NDVI > 0) %>% filter(QA <2)
-#pixels (UI) with =<100 data poi"nts in training data
-pix <-  cdat %>% filter(Date <= "2014-05-31") %>% group_by(UIJ)  %>% filter(n() >= 100) %>% select(UIJ)
+#pixels (UI) with =<100 data points in training data
+pix <-  cdat %>% filter(Date <= "2014-05-31") %>% group_by(UIJ)  %>% filter(n() >= 100) %>% dplyr::select(UIJ)
 cdat <- cdat %>% filter(UIJ %in% unique(pix$UIJ))
 
 #trim covariates and temporal data to match
@@ -165,7 +165,7 @@ dummies <- model.matrix(~as.factor(tveg))
 dummies <- dummies[,-1]
 
 #select vars and scale data
-envars <- c("slope", "aspect", "tpi", "prec1", "prec7", "tmax1", "tmin7") #"dem", 
+envars <- c("slope", "aspect", "tpi", "prec1", "prec7", "tmax1", "tmin7", "dem") 
 scaled <- scale(as.matrix(cov[,envars]))
 env <- as.data.frame(cbind(intercept=1, scaled, tveg))
 env$UI <- cov$UI
